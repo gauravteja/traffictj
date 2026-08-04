@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Traffic advisory admin</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 480px; margin: 40px auto; padding: 0 16px; color: #1a1a18; }
+  h1 { font-size: 18px; font-weight: 500; }
+  label { display: block; font-size: 13px; color: #5f5e5a; margin: 16px 0 4px; }
+  input, select, textarea { width: 100%; padding: 8px 10px; font-size: 14px; border: 1px solid #d3d1c7; border-radius: 6px; box-sizing: border-box; }
+  textarea { resize: vertical; min-height: 60px; }
+  button { margin-top: 20px; padding: 10px 16px; font-size: 14px; background: #1a1a18; color: white; border: none; border-radius: 6px; cursor: pointer; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  #status { margin-top: 12px; font-size: 13px; }
+  .error { color: #a32d2d; }
+  .success { color: #3b6d11; }
+</style>
+</head>
+<body>
+
+<h1>Post a traffic advisory</h1>
+
+<label for="token">Admin token</label>
+<input type="password" id="token" placeholder="Your ADMIN_TOKEN" />
+
+<label for="city">City</label>
+<select id="city">
+  <option value="bengaluru">Bengaluru</option>
+  <option value="hyderabad">Hyderabad</option>
+</select>
+
+<label for="road">Road / area</label>
+<input type="text" id="road" placeholder="Cubbon Park stretch (Kasturba Road to MG Road)" />
+
+<label for="start">Start time (ISO, e.g. 2026-08-06T11:00)</label>
+<input type="datetime-local" id="start" />
+
+<label for="end">End time</label>
+<input type="datetime-local" id="end" />
+
+<label for="reason">Reason</label>
+<textarea id="reason" placeholder="CM swearing-in ceremony - full closure ordered by Bengaluru Traffic Police"></textarea>
+
+<label for="source">Source URL (optional)</label>
+<input type="text" id="source" placeholder="https://twitter.com/BlrCityPolice/..." />
+
+<label for="confidence">Confidence</label>
+<select id="confidence">
+  <option value="confirmed">Confirmed</option>
+  <option value="likely">Likely</option>
+</select>
+
+<button id="submit">Post advisory</button>
+<div id="status"></div>
+
+<script>
+  // Point this at your deployed worker URL once you've run `wrangler deploy`.
+  const WORKER_URL = "https://traffic-admin-api.YOUR_SUBDOMAIN.workers.dev";
+
+  document.getElementById("submit").addEventListener("click", async () => {
+    const statusEl = document.getElementById("status");
+    const btn = document.getElementById("submit");
+    statusEl.textContent = "";
+    statusEl.className = "";
+
+    const token = document.getElementById("token").value.trim();
+    const city = document.getElementById("city").value;
+    const road_names = document.getElementById("road").value.trim();
+    const start_time = document.getElementById("start").value;
+    const end_time = document.getElementById("end").value;
+    const reason = document.getElementById("reason").value.trim();
+    const source_url = document.getElementById("source").value.trim();
+    const confidence = document.getElementById("confidence").value;
+
+    if (!token || !road_names || !start_time || !end_time) {
+      statusEl.textContent = "Fill in token, road, start time, and end time.";
+      statusEl.className = "error";
+      return;
+    }
+
+    btn.disabled = true;
+    statusEl.textContent = "Posting...";
+
+    try {
+      const res = await fetch(`${WORKER_URL}/admin/advisories`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          city, road_names, start_time, end_time, reason, source_url, confidence,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        statusEl.textContent = data.error || "Something went wrong.";
+        statusEl.className = "error";
+      } else {
+        statusEl.textContent = `Posted (advisory id ${data.id}).`;
+        statusEl.className = "success";
+        document.getElementById("road").value = "";
+        document.getElementById("reason").value = "";
+        document.getElementById("source").value = "";
+      }
+    } catch (err) {
+      statusEl.textContent = "Network error - is WORKER_URL set correctly in this file?";
+      statusEl.className = "error";
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>

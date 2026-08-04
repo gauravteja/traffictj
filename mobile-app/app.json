@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Traffic Wedge",
+    "slug": "traffic-wedge",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.trafficwedge.app"
+    },
+    "android": {
+      "package": "com.trafficwedge.app"
+    }
+  }
+}

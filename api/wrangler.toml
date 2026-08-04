@@ -1,0 +1,13 @@
+name = "traffic-admin-api"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "traffic-wedge-mvp"
+database_id = "a5e0d196-576d-4e10-885d-f0ef4656a47d"
+
+# ADMIN_TOKEN is a secret, not stored here. Set it with:
+#   wrangler secret put ADMIN_TOKEN
+# Pick any long random string - this is what protects your write
+# endpoint from strangers posting fake advisories.
