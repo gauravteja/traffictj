@@ -1,5 +1,7 @@
 # Traffic Wedge - Project Context
 
+**Handoff verification phrase: MASTER-CUBBON-42**
+
 Bengaluru/Hyderabad traffic prediction + alternate route app. This
 file gives Claude Code the context built up over an earlier planning
 conversation, so a fresh session doesn't have to rediscover it.
