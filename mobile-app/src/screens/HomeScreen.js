@@ -6,6 +6,7 @@ import { getSavedRoutes, getActiveAdvisories } from "../services/api";
 import LeaveByCard from "../components/LeaveByCard";
 import ClosureAlertCard from "../components/ClosureAlertCard";
 import RouteRow from "../components/RouteRow";
+import RouteMap from "../components/RouteMap";
 
 export default function HomeScreen() {
   const [routes, setRoutes] = useState([]);
@@ -72,7 +73,9 @@ export default function HomeScreen() {
 
       {error && <Text style={styles.errorText}>{error}</Text>}
 
-      <LeaveByCard route={primaryRoute} />
+      
+        <RouteMap route={primaryRoute} advisory={activeAdvisory} />
+        <LeaveByCard route={primaryRoute} />
 
       {activeAdvisory && (
         <ClosureAlertCard
