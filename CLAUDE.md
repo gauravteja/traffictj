@@ -32,10 +32,12 @@ The wedge is:
   sandbox) with real route polylines. Google Maps was considered but
   not needed for this piece - may still be worth it later for
   production-grade routing accuracy, but the free stack works now.
-- **Route-matching logic is real, not hardcoded.** See
-  `mobile-app/src/utils/routeMatching.js` - keyword-overlap matching
-  between a route's road segments and an advisory's road_names.
-  Tested with real cases including false-positive checks.
+- **Route-matching is NOT built yet - this earlier note was wrong.**
+  `mobile-app/src/utils/routeMatching.js` does not exist (checked full
+  git history, all branches - never committed). The real code, in
+  `mobile-app/src/services/api.js`, hardcodes
+  `affectedRouteId: 1 // TODO: real route-matching, not hardcoded`.
+  See known gap #6 below.
 
 ## Current live infrastructure
 
@@ -62,6 +64,12 @@ The wedge is:
    toast) - no real re-routing logic exists.
 5. **Pothole/flooding crowdsourced reports** - the original V2 idea,
    no schema or UI built at all yet.
+6. **Route-matching is hardcoded, not real.** `getActiveAdvisories()`
+   in `mobile-app/src/services/api.js` sets every advisory's
+   `affectedRouteId` to `1` regardless of content. No keyword-overlap
+   or road-segment matching exists. (An earlier version of this file
+   claimed this was already built in `routeMatching.js` - that file
+   never existed; verified against full git history on 2026-08-05.)
 
 ## Things NOT to redo
 
@@ -69,5 +77,6 @@ The wedge is:
 - Don't default to Google Maps without discussing cost/API key
   tradeoffs first - the free stack is working and preferred unless
   there's a specific reason to switch.
-- Route-matching is real logic already - don't hardcode a route id
-  again if extending advisory handling.
+- Don't claim route-matching is done again until
+  `mobile-app/src/utils/routeMatching.js` (or equivalent) actually
+  exists and `affectedRouteId` is no longer hardcoded to `1`.
