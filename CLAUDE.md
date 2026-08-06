@@ -38,6 +38,15 @@ The wedge is:
   `mobile-app/src/services/api.js`, hardcodes
   `affectedRouteId: 1 // TODO: real route-matching, not hardcoded`.
   See known gap #6 below.
+- **Geocoding: Nominatim (OpenStreetMap's free geocoder), no API key.**
+  `mobile-app/src/utils/geocoding.js` resolves a route's
+  `originAddress`/`destinationAddress` to lat/lon, in-memory cached,
+  throttled to Nominatim's ~1 req/sec usage policy.
+  `RouteMap.js` calls it instead of hardcoding coordinates - see
+  known gap #1. Unlike the Leaflet/OSM/OSRM decision above, this has
+  **not** been confirmed working in a real device/browser yet, only
+  syntax-checked - don't claim it's verified until someone actually
+  runs the Expo app and sees a real route render.
 
 ## Current live infrastructure
 
@@ -52,9 +61,14 @@ The wedge is:
 
 ## Known gaps (honest, in rough priority order)
 
-1. **Map coordinates are still placeholder**, not derived from real
-   saved-route addresses. No geocoding step exists yet (Nominatim,
-   OpenStreetMap's free geocoder, is the natural free option here).
+1. **Map coordinates: geocoding now wired in, not yet verified live.**
+   `RouteMap.js` calls `utils/geocoding.js` (Nominatim) on
+   `route.originAddress`/`destinationAddress` instead of hardcoding
+   coordinates. Written and syntax-checked, but never run in an
+   actual Expo session - confirm it renders a real route before
+   calling this fully done. Also still downstream of gap #2: the
+   addresses themselves are mocked in `getSavedRoutes()`, not tied to
+   a real user yet.
 2. **No user accounts.** `getSavedRoutes()` in the mobile app is
    still mocked - nothing ties a saved route to a real logged-in
    person yet.
