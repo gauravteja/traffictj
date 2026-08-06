@@ -43,10 +43,14 @@ The wedge is:
   `originAddress`/`destinationAddress` to lat/lon, in-memory cached,
   throttled to Nominatim's ~1 req/sec usage policy.
   `RouteMap.js` calls it instead of hardcoding coordinates - see
-  known gap #1. Unlike the Leaflet/OSM/OSRM decision above, this has
-  **not** been confirmed working in a real device/browser yet, only
-  syntax-checked - don't claim it's verified until someone actually
-  runs the Expo app and sees a real route render.
+  known gap #1. The geocoding logic itself is confirmed working: run
+  live in a real browser on 2026-08-06 against the actual
+  `geocodeAddress()` code (Indiranagar -> 12.9732913, 77.6404672;
+  Cubbon Park -> 12.9742535, 77.5921906), with a real OSRM route
+  rendered on top (8.4 km, 13 min). What's still unconfirmed is
+  `RouteMap.js`'s in-app behavior - nobody has run this inside the
+  actual Expo app yet, only the extracted geocoding logic in a
+  standalone test page.
 
 ## Current live infrastructure
 
@@ -61,14 +65,16 @@ The wedge is:
 
 ## Known gaps (honest, in rough priority order)
 
-1. **Map coordinates: geocoding now wired in, not yet verified live.**
+1. **Map coordinates: geocoding logic confirmed working, in-app run still pending.**
    `RouteMap.js` calls `utils/geocoding.js` (Nominatim) on
    `route.originAddress`/`destinationAddress` instead of hardcoding
-   coordinates. Written and syntax-checked, but never run in an
-   actual Expo session - confirm it renders a real route before
-   calling this fully done. Also still downstream of gap #2: the
-   addresses themselves are mocked in `getSavedRoutes()`, not tied to
-   a real user yet.
+   coordinates. The geocoding + OSRM routing itself is verified live
+   (see Stack decisions above), but that was a standalone browser test
+   of the extracted logic, not the actual Expo app - `RouteMap.js`'s
+   loading/error states and WebView rendering haven't been seen
+   in-app yet. Also still downstream of gap #2: the addresses
+   themselves are mocked in `getSavedRoutes()`, not tied to a real
+   user yet.
 2. **No user accounts.** `getSavedRoutes()` in the mobile app is
    still mocked - nothing ties a saved route to a real logged-in
    person yet.
