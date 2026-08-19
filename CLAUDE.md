@@ -48,9 +48,16 @@ The wedge is:
   `geocodeAddress()` code (Indiranagar -> 12.9732913, 77.6404672;
   Cubbon Park -> 12.9742535, 77.5921906), with a real OSRM route
   rendered on top (8.4 km, 13 min). What's still unconfirmed is
-  `RouteMap.js`'s in-app behavior - nobody has run this inside the
-  actual Expo app yet, only the extracted geocoding logic in a
-  standalone test page.
+  `RouteMap.js`'s in-app behavior on native - it's been run as a web
+  build (see below), just not on an actual phone/simulator yet.
+- **`mobile-app` had no lockfile or `.gitignore` until 2026-08-06.**
+  That let `npm install` silently resolve `expo-font` to an
+  incompatible version (57.x instead of the SDK 51-correct 12.0.10),
+  which crashed `npx expo start --web` with
+  `registerWebModule is not a function`. Fixed by pinning
+  `expo-font` and committing `package-lock.json` - if a fresh
+  install ever breaks the same way again, check for a lockfile drift
+  first before assuming the app code is at fault.
 
 ## Current live infrastructure
 
@@ -60,8 +67,15 @@ The wedge is:
   - `POST /admin/advisories` (needs ADMIN_TOKEN bearer auth)
   - `GET /advisories/active` (public)
 - Admin form: `traffic-admin-form` on Cloudflare Pages
-- GitHub repo: gauravteja/traffictj, auto-deploys api/ and
-  admin-form/ via .github/workflows/deploy.yml on push to main
+- Mobile app web preview: `traffic-wedge-web` on Cloudflare Pages
+  (added 2026-08-06). Static `expo export -p web` build of
+  `mobile-app`, deployed on every push to main. **Not the native app**
+  - no real WebView, no push notifications - it's a browser-testable
+  stand-in for showing clients real UI/behavior before there's an
+  installable phone build.
+- GitHub repo: gauravteja/traffictj, auto-deploys api/, admin-form/,
+  and the mobile-app web preview via .github/workflows/deploy.yml on
+  push to main
 
 ## Known gaps (honest, in rough priority order)
 
