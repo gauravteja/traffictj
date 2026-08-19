@@ -50,11 +50,17 @@ jobs:
       # that, the project already exists and this step just fails
       # harmlessly (continue-on-error), which is fine since it does
       # nothing else.
+      # 'pages project create' - unlike every other wrangler command
+      # used in this workflow - can't infer the account from the API
+      # token alone (failed with "Could not route to
+      # /client/v4/accounts/pages/projects", an empty account
+      # segment). accountId has to be explicit for this one command.
       - name: Ensure Cloudflare Pages project exists
         continue-on-error: true
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: 167a8c6609c301ab5dc00da8795dfcff
           command: pages project create traffic-wedge-web --production-branch=main
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
