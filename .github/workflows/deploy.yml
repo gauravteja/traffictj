@@ -24,3 +24,27 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: pages deploy admin-form --project-name=traffic-admin-form
+
+  # Client-testable web preview of the mobile app, via Expo's web
+  # target (react-native-web) exported as a static site. This is NOT
+  # the real mobile app experience (no native WebView, no push
+  # notifications) - it's a browser-testable stand-in so the app can
+  # be shared with a link before there's a phone build to install.
+  deploy-mobile-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        working-directory: mobile-app
+        run: npm ci
+      - name: Export web build
+        working-directory: mobile-app
+        run: npx expo export -p web
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: pages deploy mobile-app/dist --project-name=traffic-wedge-web

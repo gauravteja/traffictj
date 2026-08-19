@@ -1,8 +1,10 @@
-import { Platform, View, StyleSheet } from "react-native";
+import { useEffect, useState } from "react";
+import { Platform, View, Text, StyleSheet } from "react-native";
 import { WebView } from "react-native-webview";
-import { colors, radius } from "../theme/colors";
+import { colors, radius, spacing } from "../theme/colors";
+import { geocodeAddress } from "../utils/geocoding";
 
-function buildMapHtml({ origin, destination, closurePoint, closureLabel }) {
+function buildMapHtml({ origin, destination, closurePoint, originLabel, destinationLabel, closureLabel }) {
   return `
 <!DOCTYPE html>
 <html>
@@ -18,9 +20,9 @@ function buildMapHtml({ origin, destination, closurePoint, closureLabel }) {
 <div id="map"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  const origin = [${origin[0]}, ${origin[1]}];
-  const destination = [${destination[0]}, ${destination[1]}];
-  const closurePoint = [${closurePoint[0]}, ${closurePoint[1]}];
+  const origin = [${origin.lat}, ${origin.lon}];
+  const destination = [${destination.lat}, ${destination.lon}];
+  const closurePoint = [${closurePoint.lat}, ${closurePoint.lon}];
 
   const map = L.map('map').setView(origin, 13);
 
@@ -29,8 +31,8 @@ function buildMapHtml({ origin, destination, closurePoint, closureLabel }) {
     maxZoom: 19,
   }).addTo(map);
 
-  L.marker(origin).addTo(map).bindPopup('Home');
-  L.marker(destination).addTo(map).bindPopup('Office');
+  L.marker(origin).addTo(map).bindPopup(${JSON.stringify(originLabel)});
+  L.marker(destination).addTo(map).bindPopup(${JSON.stringify(destinationLabel)});
   L.circleMarker(closurePoint, { radius: 8, color: '#A32D2D', fillColor: '#A32D2D', fillOpacity: 0.8 })
     .addTo(map)
     .bindPopup(${JSON.stringify(closureLabel)});
@@ -54,12 +56,77 @@ function buildMapHtml({ origin, destination, closurePoint, closureLabel }) {
 }
 
 export default function RouteMap({ route, advisory }) {
-  const origin = [12.9784, 77.6408];
-  const destination = [12.9757, 77.5937];
-  const closurePoint = [12.9757, 77.5937];
-  const closureLabel = advisory ? `Closed: ${advisory.roadNames}` : "No active closure";
+  const [state, setState] = useState({ status: "loading" });
 
-  const html = buildMapHtml({ origin, destination, closurePoint, closureLabel });
+  useEffect(() => {
+    if (!route?.originAddress || !route?.destinationAddress) {
+      setState({ status: "error" });
+      return;
+    }
+
+    let cancelled = false;
+    setState({ status: "loading" });
+
+    (async () => {
+      try {
+        const [origin, destination] = await Promise.all([
+          geocodeAddress(route.originAddress),
+          geocodeAddress(route.destinationAddress),
+        ]);
+
+        if (cancelled) return;
+        if (!origin || !destination) {
+          setState({ status: "error" });
+          return;
+        }
+
+        // Best-effort: place the closure marker at the advisory's own
+        // location. Advisories only store free-text road names (see
+        // api/src/index.js), so geocoding them can miss - fall back
+        // to the destination so the map still shows something.
+        let closurePoint = destination;
+        if (advisory?.roadNames) {
+          const advisoryPoint = await geocodeAddress(`${advisory.roadNames}, Bengaluru`);
+          if (advisoryPoint) closurePoint = advisoryPoint;
+        }
+
+        if (cancelled) return;
+        setState({
+          status: "ready",
+          origin,
+          destination,
+          closurePoint,
+          originLabel: route.originAddress,
+          destinationLabel: route.destinationAddress,
+          closureLabel: advisory ? `Closed: ${advisory.roadNames}` : "No active closure",
+        });
+      } catch (err) {
+        if (!cancelled) setState({ status: "error" });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [route?.originAddress, route?.destinationAddress, advisory?.roadNames]);
+
+  if (state.status === "loading") {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text style={styles.muted}>Locating your route…</Text>
+      </View>
+    );
+  }
+
+  if (state.status === "error") {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text style={styles.muted}>Couldn't locate this route on the map.</Text>
+      </View>
+    );
+  }
+
+  const html = buildMapHtml(state);
 
   return (
     <View style={styles.container}>
@@ -87,7 +154,16 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: 16,
+    marginBottom: spacing.lg,
+  },
+  centered: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface1,
+  },
+  muted: {
+    fontSize: 13,
+    color: colors.textMuted,
   },
   webview: {
     flex: 1,

@@ -13,10 +13,16 @@ const API_BASE = "https://traffic-admin-api.YOUR_SUBDOMAIN.workers.dev";
 
 export async function getSavedRoutes() {
   // TODO: still mocked - no /routes endpoint or auth/user system yet.
+  // originAddress/destinationAddress are real, geocodable place names
+  // (fed to utils/geocoding.js) so RouteMap can show an actual map
+  // instead of the old hardcoded coordinates - see CLAUDE.md known
+  // gap #1. Once real accounts exist, these come from the user.
   return [
     {
       id: 1,
       label: "Home to office",
+      originAddress: "Indiranagar, Bengaluru",
+      destinationAddress: "Cubbon Park, Bengaluru",
       etaMinutes: 32,
       etaDeltaMinutes: 8,
       leaveByTime: "8:52am",
@@ -25,6 +31,8 @@ export async function getSavedRoutes() {
     {
       id: 2,
       label: "Office to gym",
+      originAddress: "Cubbon Park, Bengaluru",
+      destinationAddress: "Koramangala, Bengaluru",
       etaMinutes: 14,
       etaDeltaMinutes: 0,
       leaveByTime: null,
