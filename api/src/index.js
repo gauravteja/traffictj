@@ -1,10 +1,13 @@
-// Admin + public API for traffic advisories.
+// Admin + public API for traffic advisories, plus crowdsourced hazard
+// reports (potholes, waterlogging - the V2 idea from CLAUDE.md).
 // Replaces the WordPress-polling worker: advisories are now written
 // directly as structured rows, no HTML parsing required.
 //
 // Routes:
 //   POST /admin/advisories   - create an advisory (requires ADMIN_TOKEN)
 //   GET  /advisories/active  - list current advisories (public, used by the app)
+//   POST /hazards            - report a hazard (public, no auth - crowdsourced)
+//   GET  /hazards/active     - list active hazards (public, used by the app)
 //
 // Bindings expected (see wrangler.toml):
 //   env.DB          - D1 database binding (traffic-wedge-mvp)
@@ -31,6 +34,14 @@ export default {
 
       if (url.pathname === "/advisories/active" && request.method === "GET") {
         return await listActiveAdvisories(env);
+      }
+
+      if (url.pathname === "/hazards" && request.method === "POST") {
+        return await reportHazard(request, env);
+      }
+
+      if (url.pathname === "/hazards/active" && request.method === "GET") {
+        return await listActiveHazards(env);
       }
 
       return json({ error: "Not found" }, 404);
@@ -94,6 +105,55 @@ async function listActiveAdvisories(env) {
   ).all();
 
   return json({ advisories: results }, 200, CORS_HEADERS);
+}
+
+const HAZARD_TYPES = ["pothole", "waterlogging"];
+
+// Public, unauthenticated - this is the crowdsourced reporting endpoint
+// itself, unlike /admin/advisories. No login system exists yet
+// (CLAUDE.md known gap #2), so there's no per-user rate limiting or
+// spam protection here - acceptable for an MVP, revisit if abused.
+async function reportHazard(request, env) {
+  const body = await request.json().catch(() => null);
+  if (!body) return json({ error: "Invalid JSON body" }, 400);
+
+  const { type, lat, lng, description, photo_url, source, reported_at } = body;
+
+  if (!HAZARD_TYPES.includes(type)) {
+    return json({ error: `type must be one of: ${HAZARD_TYPES.join(", ")}` }, 400);
+  }
+  if (typeof lat !== "number" || typeof lng !== "number") {
+    return json({ error: "lat and lng are required numbers" }, 400);
+  }
+
+  const result = await env.DB.prepare(
+    `INSERT INTO hazards
+     (type, lat, lng, description, photo_url, source, status, reported_at)
+     VALUES (?, ?, ?, ?, ?, ?, 'active', ?)`
+  )
+    .bind(
+      type,
+      lat,
+      lng,
+      description ? description.trim() : null,
+      photo_url || null,
+      source || "user_report",
+      reported_at || new Date().toISOString()
+    )
+    .run();
+
+  return json({ ok: true, id: result.meta.last_row_id }, 201, CORS_HEADERS);
+}
+
+async function listActiveHazards(env) {
+  const { results } = await env.DB.prepare(
+    `SELECT id, type, lat, lng, description, photo_url, source, reported_at
+     FROM hazards
+     WHERE status = 'active'
+     ORDER BY reported_at DESC`
+  ).all();
+
+  return json({ hazards: results }, 200, CORS_HEADERS);
 }
 
 function json(data, status = 200, extraHeaders = {}) {
