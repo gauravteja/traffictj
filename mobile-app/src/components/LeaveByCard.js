@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, radius } from "../theme/colors";
+import { colors, spacing, radius, shadows, eyebrow } from "../theme/colors";
 
 export default function LeaveByCard({ route }) {
   if (!route || !route.leaveByTime) return null;
@@ -8,7 +8,9 @@ export default function LeaveByCard({ route }) {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Ionicons name="time-outline" size={18} color={colors.textAccent} />
+        <View style={styles.badge}>
+          <Ionicons name="time" size={16} color={colors.textAccent} />
+        </View>
         <Text style={styles.headerText}>Leave by {route.leaveByTime}</Text>
       </View>
       <Text style={styles.title}>{route.label}</Text>
@@ -25,26 +27,32 @@ export default function LeaveByCard({ route }) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface1,
-    borderWidth: 2,
-    borderColor: colors.borderAccent,
-    borderRadius: radius.card,
+    borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.lg,
+    ...shadows.card,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  badge: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.pill,
+    backgroundColor: colors.bgAccent,
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerText: {
-    fontSize: 12,
-    fontWeight: "500",
+    ...eyebrow,
     color: colors.textAccent,
   },
   title: {
-    fontSize: 15,
-    fontWeight: "500",
+    fontSize: 16,
+    fontWeight: "700",
     color: colors.textPrimary,
   },
   subtitle: {

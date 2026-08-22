@@ -11,13 +11,13 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, radius } from "../theme/colors";
+import { colors, spacing, radius, eyebrow, shadows } from "../theme/colors";
 import { geocodeAddress } from "../utils/geocoding";
 import { reportHazard } from "../services/api";
 
 const TYPES = [
-  { value: "pothole", label: "Pothole" },
-  { value: "waterlogging", label: "Waterlogging" },
+  { value: "pothole", label: "Pothole", icon: "alert-circle" },
+  { value: "waterlogging", label: "Waterlogging", icon: "water" },
 ];
 
 export default function ReportHazardModal({ visible, onClose, onSubmitted }) {
@@ -81,6 +81,7 @@ export default function ReportHazardModal({ visible, onClose, onSubmitted }) {
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={styles.sheet}
         >
+          <View style={styles.dragHandle} />
           <View style={styles.headerRow}>
             <Text style={styles.title}>Report a hazard</Text>
             <TouchableOpacity onPress={handleClose} hitSlop={8}>
@@ -94,7 +95,13 @@ export default function ReportHazardModal({ visible, onClose, onSubmitted }) {
                 key={t.value}
                 style={[styles.typeButton, type === t.value && styles.typeButtonActive]}
                 onPress={() => setType(t.value)}
+                activeOpacity={0.7}
               >
+                <Ionicons
+                  name={t.icon}
+                  size={16}
+                  color={type === t.value ? colors.textAccent : colors.textSecondary}
+                />
                 <Text style={[styles.typeButtonText, type === t.value && styles.typeButtonTextActive]}>
                   {t.label}
                 </Text>
@@ -148,10 +155,25 @@ const styles = StyleSheet.create({
   },
   sheet: {
     backgroundColor: colors.surface1,
-    borderTopLeftRadius: radius.card,
-    borderTopRightRadius: radius.card,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
     padding: spacing.lg,
     paddingBottom: spacing.xl,
+    // Shadow points up, since this sheet sits at the bottom of the
+    // screen - a downward shadow would be invisible under it.
+    shadowColor: "#14202B",
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  dragHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: radius.pill,
+    backgroundColor: colors.border,
+    alignSelf: "center",
+    marginBottom: spacing.md,
   },
   headerRow: {
     flexDirection: "row",
@@ -171,11 +193,14 @@ const styles = StyleSheet.create({
   },
   typeButton: {
     flex: 1,
-    paddingVertical: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
     borderRadius: radius.control,
     borderWidth: 1,
     borderColor: colors.border,
-    alignItems: "center",
   },
   typeButtonActive: {
     backgroundColor: colors.bgAccent,
@@ -187,12 +212,12 @@ const styles = StyleSheet.create({
   },
   typeButtonTextActive: {
     color: colors.textAccent,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   label: {
-    fontSize: 12,
+    ...eyebrow,
     color: colors.textMuted,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   input: {
     borderWidth: 1,
@@ -218,6 +243,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.control,
     paddingVertical: spacing.md,
     alignItems: "center",
+    ...shadows.card,
   },
   submitButtonDisabled: {
     opacity: 0.7,

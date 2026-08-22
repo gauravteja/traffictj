@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, radius } from "../theme/colors";
+import { colors, spacing, radius, shadows, eyebrow } from "../theme/colors";
 
 export default function ClosureAlertCard({ advisory, onViewAlternate }) {
   if (!advisory) return null;
@@ -8,14 +8,17 @@ export default function ClosureAlertCard({ advisory, onViewAlternate }) {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Ionicons name="warning-outline" size={18} color={colors.textDanger} />
+        <View style={styles.badge}>
+          <Ionicons name="warning" size={16} color={colors.textDanger} />
+        </View>
         <Text style={styles.headerText}>Route closure today</Text>
       </View>
       <Text style={styles.title}>
         {advisory.roadNames} closed, {advisory.windowText}
       </Text>
       <Text style={styles.subtitle}>{advisory.reason}</Text>
-      <TouchableOpacity style={styles.button} onPress={onViewAlternate}>
+      <TouchableOpacity style={styles.button} onPress={onViewAlternate} activeOpacity={0.7}>
+        <Ionicons name="git-branch-outline" size={15} color={colors.textPrimary} />
         <Text style={styles.buttonText}>View alternate route</Text>
       </TouchableOpacity>
     </View>
@@ -25,24 +28,32 @@ export default function ClosureAlertCard({ advisory, onViewAlternate }) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.bgDanger,
-    borderRadius: radius.card,
+    borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.xl,
+    ...shadows.card,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  badge: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerText: {
-    fontSize: 12,
-    fontWeight: "500",
+    ...eyebrow,
     color: colors.textDanger,
   },
   title: {
-    fontSize: 14,
-    fontWeight: "500",
+    fontSize: 15,
+    fontWeight: "600",
     color: colors.textDanger,
   },
   subtitle: {
@@ -52,16 +63,20 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   button: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
     alignSelf: "flex-start",
-    borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: radius.control,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     backgroundColor: colors.surface1,
+    ...shadows.card,
   },
   buttonText: {
     fontSize: 13,
+    fontWeight: "600",
     color: colors.textPrimary,
   },
 });
