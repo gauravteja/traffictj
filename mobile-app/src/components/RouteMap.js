@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Platform, View, Text, StyleSheet } from "react-native";
 import { WebView } from "react-native-webview";
-import { colors, radius, spacing } from "../theme/colors";
+import { colors, radius, spacing, shadows } from "../theme/colors";
 import { geocodeAddress } from "../utils/geocoding";
 import { getActiveHazards } from "../services/api";
 
@@ -137,16 +137,20 @@ export default function RouteMap({ route, advisory, refreshToken }) {
 
   if (state.status === "loading") {
     return (
-      <View style={[styles.container, styles.centered]}>
-        <Text style={styles.muted}>Locating your route…</Text>
+      <View style={styles.shadowWrapper}>
+        <View style={[styles.container, styles.centered]}>
+          <Text style={styles.muted}>Locating your route…</Text>
+        </View>
       </View>
     );
   }
 
   if (state.status === "error") {
     return (
-      <View style={[styles.container, styles.centered]}>
-        <Text style={styles.muted}>Couldn't locate this route on the map.</Text>
+      <View style={styles.shadowWrapper}>
+        <View style={[styles.container, styles.centered]}>
+          <Text style={styles.muted}>Couldn't locate this route on the map.</Text>
+        </View>
       </View>
     );
   }
@@ -154,32 +158,40 @@ export default function RouteMap({ route, advisory, refreshToken }) {
   const html = buildMapHtml(state);
 
   return (
-    <View style={styles.container}>
-      {Platform.OS === "web" ? (
-        <iframe
-          title="Route map"
-          srcDoc={html}
-          style={{ width: "100%", height: 200, border: 0 }}
-        />
-      ) : (
-        <WebView
-          originWhitelist={["*"]}
-          source={{ html }}
-          style={styles.webview}
-        />
-      )}
+    <View style={styles.shadowWrapper}>
+      <View style={styles.container}>
+        {Platform.OS === "web" ? (
+          <iframe
+            title="Route map"
+            srcDoc={html}
+            style={{ width: "100%", height: 200, border: 0 }}
+          />
+        ) : (
+          <WebView
+            originWhitelist={["*"]}
+            source={{ html }}
+            style={styles.webview}
+          />
+        )}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  // Shadows and `overflow: hidden` (needed to clip the map to rounded
+  // corners) can't live on the same view - a hidden overflow clips
+  // the shadow too. This wrapper carries the elevation; `container`
+  // below does the clipping.
+  shadowWrapper: {
+    borderRadius: radius.lg,
+    marginBottom: spacing.lg,
+    ...shadows.raised,
+  },
   container: {
     height: 200,
-    borderRadius: radius.card,
+    borderRadius: radius.lg,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.lg,
   },
   centered: {
     alignItems: "center",

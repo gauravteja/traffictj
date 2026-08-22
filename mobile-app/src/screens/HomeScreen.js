@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { View, Text, StyleSheet, ScrollView, RefreshControl, Alert, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, spacing, radius } from "../theme/colors";
+import { colors, spacing, radius, shadows, eyebrow } from "../theme/colors";
 import { getSavedRoutes, getActiveAdvisories } from "../services/api";
 import LeaveByCard from "../components/LeaveByCard";
 import ClosureAlertCard from "../components/ClosureAlertCard";
@@ -94,8 +94,12 @@ export default function HomeScreen() {
         />
       )}
 
-      <TouchableOpacity style={styles.reportButton} onPress={() => setReportModalVisible(true)}>
-        <Ionicons name="alert-circle-outline" size={16} color={colors.textSecondary} />
+      <TouchableOpacity
+        style={styles.reportButton}
+        onPress={() => setReportModalVisible(true)}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="alert-circle" size={16} color={colors.textAccent} />
         <Text style={styles.reportButtonText}>Report a pothole or waterlogging</Text>
       </TouchableOpacity>
 
@@ -139,22 +143,24 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   greeting: {
-    fontSize: 13,
+    ...eyebrow,
     color: colors.textMuted,
   },
   city: {
-    fontSize: 18,
-    fontWeight: "500",
+    fontSize: 24,
+    fontWeight: "700",
+    letterSpacing: -0.3,
     color: colors.textPrimary,
-    marginTop: 2,
+    marginTop: 3,
   },
   avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: radius.pill,
     backgroundColor: colors.bgAccent,
     alignItems: "center",
     justifyContent: "center",
+    ...shadows.card,
   },
   errorText: {
     fontSize: 13,
@@ -162,23 +168,23 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   sectionLabel: {
-    fontSize: 12,
+    ...eyebrow,
     color: colors.textMuted,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   reportButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.border,
+    gap: spacing.sm,
+    backgroundColor: colors.bgAccent,
     borderRadius: radius.control,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
     marginBottom: spacing.xl,
   },
   reportButtonText: {
     fontSize: 13,
-    color: colors.textSecondary,
+    fontWeight: "600",
+    color: colors.textAccent,
   },
 });

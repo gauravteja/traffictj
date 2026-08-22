@@ -33,4 +33,38 @@ export const spacing = {
 export const radius = {
   control: 8,
   card: 12,
+  lg: 18,
+  pill: 999,
+};
+
+// Shared elevation tokens so cards read as distinct surfaces instead
+// of flat rectangles with a hairline border. `card` for anything
+// sitting directly on the screen background; `raised` for the one
+// thing per screen that should read as most important (the map,
+// a modal sheet).
+export const shadows = {
+  card: {
+    shadowColor: "#14202B",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  raised: {
+    shadowColor: "#14202B",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+};
+
+// Small reusable text treatment for section eyebrows / labels, so
+// "YOUR ROUTES" and "LEAVE BY 8:52AM" share one deliberate look
+// instead of each screen inventing its own.
+export const eyebrow = {
+  fontSize: 11,
+  fontWeight: "700",
+  letterSpacing: 0.6,
+  textTransform: "uppercase",
 };
