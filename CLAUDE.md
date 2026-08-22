@@ -13,8 +13,8 @@ The wedge is:
 1. Proactive "leave-by" alerts for a fixed commute (push, not pull)
 2. Advance warning of official road closures (VIP movement, festivals,
    ceremonies) that traffic police publish but most commuters miss
-3. Eventually: crowdsourced hazard reports (potholes, flooding) -
-   V2, not built yet
+3. Crowdsourced hazard reports (potholes, waterlogging) - built
+   2026-08-22, see known gap #5 for what's still unverified
 
 ## Stack decisions and why
 
@@ -67,14 +67,29 @@ The wedge is:
   just never got the same fix. Fixed 2026-08-22. If a fetch call
   anywhere in this app mysteriously fails, check the literal URL
   string before assuming it's a network/CORS/backend issue.
+- **Hazard reports seeded from a citizen's open pothole-tracking
+  project, not scraped live.** `warlockdn/blr-potholes-data` stores
+  each report as a GitHub Issue titled `Add location data: lat, lng`.
+  It's anonymous, undocumented, unlicensed, and could change or
+  disappear anytime - treated as a one-time seed
+  (`source='seed_blr_potholes_github'`), not a live dependency. Only
+  24 deduped points were imported directly (via D1, not the app) -
+  `api.github.com` is blocked from a sandboxed session, so the full
+  ~223-issue sync has to run from a real machine via
+  `api/scripts/import-blr-potholes.js`.
 
 ## Current live infrastructure
 
 - D1 database: `traffic-wedge-mvp` (id: a5e0d196-576d-4e10-885d-f0ef4656a47d)
-  - Tables: users, saved_routes, advisories, alerts_sent
+  - Tables: users, saved_routes, advisories, alerts_sent, hazards
+  - `hazards` is the only one with a migration file checked in
+    (`api/migrations/0001_create_hazards.sql`) - the others exist only
+    as whatever's live in D1, no schema file for them yet.
 - Worker API: `traffic-admin-api` at traffic-admin-api.tjgt.workers.dev
   - `POST /admin/advisories` (needs ADMIN_TOKEN bearer auth)
   - `GET /advisories/active` (public)
+  - `POST /hazards` (public, no auth - crowdsourced)
+  - `GET /hazards/active` (public)
 - Admin form: `traffic-admin-form` on Cloudflare Pages
 - Mobile app web preview: `traffic-wedge-web` on Cloudflare Pages
   (added 2026-08-06). Static `expo export -p web` build of
@@ -114,8 +129,18 @@ The wedge is:
    nothing alerts a phone when a new advisory affects a saved route.
 4. **Alternate route screen is a placeholder** (just shows an alert/
    toast) - no real re-routing logic exists.
-5. **Pothole/flooding crowdsourced reports** - the original V2 idea,
-   no schema or UI built at all yet.
+5. **Hazard reports: built 2026-08-22, not yet confirmed with real
+   data on a real device.** `POST/GET /hazards`, a `ReportHazardModal`
+   form, and pins on `RouteMap.js` all exist and were verified locally
+   (app mounts, form validates, submission fails gracefully when
+   network calls are blocked) - but that verification ran in this
+   session's sandbox, where Nominatim and the Worker API are both
+   blocked, same limitation gap #1 had before someone confirmed it on
+   a real browser. Nobody has yet submitted a real report or seen a
+   real hazard pin render end-to-end. Only 24 of blr-potholes-data's
+   ~223 points are seeded (see Stack decisions above) - run
+   `api/scripts/import-blr-potholes.js` from a real machine for the
+   rest.
 6. **Route-matching is hardcoded, not real.** `getActiveAdvisories()`
    in `mobile-app/src/services/api.js` sets every advisory's
    `affectedRouteId` to `1` regardless of content. No keyword-overlap
