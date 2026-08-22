@@ -58,6 +58,15 @@ The wedge is:
   `expo-font` and committing `package-lock.json` - if a fresh
   install ever breaks the same way again, check for a lockfile drift
   first before assuming the app code is at fault.
+- **`api.js`'s `API_BASE` was a literal unreplaced placeholder for a
+  long time.** It read `traffic-admin-api.YOUR_SUBDOMAIN.workers.dev`
+  - a domain that has never resolved - so `getActiveAdvisories()`
+  always failed, on any device, not just in a sandboxed session.
+  `admin-form/index.html` had the correct URL
+  (`traffic-admin-api.tjgt.workers.dev`) the whole time; `api.js`
+  just never got the same fix. Fixed 2026-08-22. If a fetch call
+  anywhere in this app mysteriously fails, check the literal URL
+  string before assuming it's a network/CORS/backend issue.
 
 ## Current live infrastructure
 
@@ -72,21 +81,30 @@ The wedge is:
   `mobile-app`, deployed on every push to main. **Not the native app**
   - no real WebView, no push notifications - it's a browser-testable
   stand-in for showing clients real UI/behavior before there's an
-  installable phone build.
+  installable phone build. **Confirmed working end-to-end 2026-08-22**
+  in a real browser at https://traffic-wedge-web.pages.dev: routes
+  load, advisories load from the real Worker API, and the map
+  geocodes and renders a real route. (Took 3 deploy fixes to get the
+  pipeline itself working, then one more for the `API_BASE` bug above
+  - see git history on `.github/workflows/deploy.yml` and
+  `mobile-app/src/services/api.js` around 2026-08-19/22 if any of
+  this breaks again.)
 - GitHub repo: gauravteja/traffictj, auto-deploys api/, admin-form/,
   and the mobile-app web preview via .github/workflows/deploy.yml on
   push to main
 
 ## Known gaps (honest, in rough priority order)
 
-1. **Map coordinates: geocoding logic confirmed working, in-app run still pending.**
+1. **Map coordinates: confirmed working on web, native still unverified.**
    `RouteMap.js` calls `utils/geocoding.js` (Nominatim) on
    `route.originAddress`/`destinationAddress` instead of hardcoding
-   coordinates. The geocoding + OSRM routing itself is verified live
-   (see Stack decisions above), but that was a standalone browser test
-   of the extracted logic, not the actual Expo app - `RouteMap.js`'s
-   loading/error states and WebView rendering haven't been seen
-   in-app yet. Also still downstream of gap #2: the addresses
+   coordinates. Confirmed end-to-end on 2026-08-22 in the deployed web
+   preview (traffic-wedge-web.pages.dev, in a real browser, not this
+   session's sandbox) - real routes load, real geocoding resolves,
+   real OSRM route renders. What's still unconfirmed is native:
+   `RouteMap.js`'s `react-native-webview` branch (as opposed to the
+   web build's `<iframe>` branch) has never been run on an actual
+   phone/simulator. Also still downstream of gap #2: the addresses
    themselves are mocked in `getSavedRoutes()`, not tied to a real
    user yet.
 2. **No user accounts.** `getSavedRoutes()` in the mobile app is
