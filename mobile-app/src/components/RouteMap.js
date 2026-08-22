@@ -3,8 +3,14 @@ import { Platform, View, Text, StyleSheet } from "react-native";
 import { WebView } from "react-native-webview";
 import { colors, radius, spacing } from "../theme/colors";
 import { geocodeAddress } from "../utils/geocoding";
+import { getActiveHazards } from "../services/api";
 
-function buildMapHtml({ origin, destination, closurePoint, originLabel, destinationLabel, closureLabel }) {
+const HAZARD_COLORS = {
+  pothole: "#B36B1E",
+  waterlogging: "#0E8074",
+};
+
+function buildMapHtml({ origin, destination, closurePoint, originLabel, destinationLabel, closureLabel, hazards }) {
   return `
 <!DOCTYPE html>
 <html>
@@ -23,6 +29,7 @@ function buildMapHtml({ origin, destination, closurePoint, originLabel, destinat
   const origin = [${origin.lat}, ${origin.lon}];
   const destination = [${destination.lat}, ${destination.lon}];
   const closurePoint = [${closurePoint.lat}, ${closurePoint.lon}];
+  const hazards = ${JSON.stringify(hazards)};
 
   const map = L.map('map').setView(origin, 13);
 
@@ -36,6 +43,14 @@ function buildMapHtml({ origin, destination, closurePoint, originLabel, destinat
   L.circleMarker(closurePoint, { radius: 8, color: '#A32D2D', fillColor: '#A32D2D', fillOpacity: 0.8 })
     .addTo(map)
     .bindPopup(${JSON.stringify(closureLabel)});
+
+  hazards.forEach((h) => {
+    const color = h.type === 'waterlogging' ? '${HAZARD_COLORS.waterlogging}' : '${HAZARD_COLORS.pothole}';
+    const label = h.description ? \`\${h.type}: \${h.description}\` : h.type;
+    L.circleMarker([h.lat, h.lng], { radius: 5, color, fillColor: color, fillOpacity: 0.7, weight: 1 })
+      .addTo(map)
+      .bindPopup(label);
+  });
 
   const osrmUrl = \`https://router.project-osrm.org/route/v1/driving/\${origin[1]},\${origin[0]};\${destination[1]},\${destination[0]}?overview=full&geometries=geojson\`;
 
@@ -55,7 +70,7 @@ function buildMapHtml({ origin, destination, closurePoint, originLabel, destinat
 `;
 }
 
-export default function RouteMap({ route, advisory }) {
+export default function RouteMap({ route, advisory, refreshToken }) {
   const [state, setState] = useState({ status: "loading" });
 
   useEffect(() => {
@@ -90,6 +105,15 @@ export default function RouteMap({ route, advisory }) {
           if (advisoryPoint) closurePoint = advisoryPoint;
         }
 
+        // Hazards are supplementary - if this fails, still show the
+        // route rather than the whole map erroring out.
+        let hazards = [];
+        try {
+          hazards = await getActiveHazards();
+        } catch (err) {
+          hazards = [];
+        }
+
         if (cancelled) return;
         setState({
           status: "ready",
@@ -99,6 +123,7 @@ export default function RouteMap({ route, advisory }) {
           originLabel: route.originAddress,
           destinationLabel: route.destinationAddress,
           closureLabel: advisory ? `Closed: ${advisory.roadNames}` : "No active closure",
+          hazards,
         });
       } catch (err) {
         if (!cancelled) setState({ status: "error" });
@@ -108,7 +133,7 @@ export default function RouteMap({ route, advisory }) {
     return () => {
       cancelled = true;
     };
-  }, [route?.originAddress, route?.destinationAddress, advisory?.roadNames]);
+  }, [route?.originAddress, route?.destinationAddress, advisory?.roadNames, refreshToken]);
 
   if (state.status === "loading") {
     return (

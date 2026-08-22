@@ -56,6 +56,37 @@ export async function getActiveAdvisories() {
   }));
 }
 
+// Crowdsourced hazard reports (potholes, waterlogging) - CLAUDE.md's
+// V2 idea, now a real endpoint. Seeded with a sample from a Bengaluru
+// citizen's open pothole-tracking project (source: 'seed_blr_potholes_github'),
+// plus whatever gets reported through reportHazard() below
+// ('user_report').
+export async function getActiveHazards() {
+  const res = await fetch(`${API_BASE}/hazards/active`);
+  if (!res.ok) throw new Error("Failed to load hazards");
+  const data = await res.json();
+  return data.hazards.map((h) => ({
+    id: h.id,
+    type: h.type,
+    lat: h.lat,
+    lng: h.lng,
+    description: h.description,
+  }));
+}
+
+// Takes already-geocoded lat/lng - geocoding an address is the UI
+// layer's job (see ReportHazardModal), same as RouteMap does its own
+// geocoding rather than pushing it into this service file.
+export async function reportHazard({ type, lat, lng, description }) {
+  const res = await fetch(`${API_BASE}/hazards`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type, lat, lng, description: description || undefined }),
+  });
+  if (!res.ok) throw new Error("Failed to submit report");
+  return res.json();
+}
+
 function formatWindow(start, end) {
   const opts = { hour: "numeric", minute: "2-digit" };
   const s = new Date(start).toLocaleTimeString("en-IN", opts);
