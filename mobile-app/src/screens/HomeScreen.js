@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Alert, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius } from "../theme/colors";
 import { getSavedRoutes, getActiveAdvisories } from "../services/api";
@@ -7,6 +7,7 @@ import LeaveByCard from "../components/LeaveByCard";
 import ClosureAlertCard from "../components/ClosureAlertCard";
 import RouteRow from "../components/RouteRow";
 import RouteMap from "../components/RouteMap";
+import ReportHazardModal from "../components/ReportHazardModal";
 
 export default function HomeScreen() {
   const [routes, setRoutes] = useState([]);
@@ -14,6 +15,10 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  // Bumped after a successful hazard report so RouteMap re-fetches and
+  // shows the new pin without a full pull-to-refresh.
+  const [hazardsVersion, setHazardsVersion] = useState(0);
 
   const loadData = useCallback(async () => {
     try {
@@ -74,7 +79,7 @@ export default function HomeScreen() {
       {error && <Text style={styles.errorText}>{error}</Text>}
 
       
-        <RouteMap route={primaryRoute} advisory={activeAdvisory} />
+        <RouteMap route={primaryRoute} advisory={activeAdvisory} refreshToken={hazardsVersion} />
         <LeaveByCard route={primaryRoute} />
 
       {activeAdvisory && (
@@ -89,10 +94,21 @@ export default function HomeScreen() {
         />
       )}
 
+      <TouchableOpacity style={styles.reportButton} onPress={() => setReportModalVisible(true)}>
+        <Ionicons name="alert-circle-outline" size={16} color={colors.textSecondary} />
+        <Text style={styles.reportButtonText}>Report a pothole or waterlogging</Text>
+      </TouchableOpacity>
+
       <Text style={styles.sectionLabel}>Your routes</Text>
       {routes.map((route) => (
         <RouteRow key={route.id} route={route} />
       ))}
+
+      <ReportHazardModal
+        visible={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        onSubmitted={() => setHazardsVersion((v) => v + 1)}
+      />
     </ScrollView>
   );
 }
@@ -149,5 +165,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textMuted,
     marginBottom: spacing.sm,
+  },
+  reportButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.control,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  reportButtonText: {
+    fontSize: 13,
+    color: colors.textSecondary,
   },
 });
