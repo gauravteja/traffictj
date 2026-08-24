@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, RefreshControl, Alert, TouchableOpa
 import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, shadows, eyebrow } from "../theme/colors";
 import { getSavedRoutes, getActiveAdvisories } from "../services/api";
+import { findActiveAdvisoryMatch } from "../utils/routeMatching";
 import LeaveByCard from "../components/LeaveByCard";
 import ClosureAlertCard from "../components/ClosureAlertCard";
 import RouteRow from "../components/RouteRow";
@@ -47,10 +48,16 @@ export default function HomeScreen() {
   };
 
   const primaryRoute = routes.find((r) => r.leaveByTime) || routes[0];
-  const activeAdvisory = advisories[0];
-  const affectedRoute = activeAdvisory
-    ? routes.find((r) => r.id === activeAdvisory.affectedRouteId)
-    : null;
+
+  // Real keyword-overlap matching (utils/routeMatching.js) - only an
+  // advisory that actually shares a road with one of the user's
+  // routes surfaces here, instead of the old hardcoded "always
+  // route 1" behavior showing every advisory regardless of relevance.
+  const activeMatch = findActiveAdvisoryMatch(routes, advisories);
+  const activeAdvisory = activeMatch?.advisory ?? null;
+  // The map centers on whichever route the advisory actually affects,
+  // falling back to the primary route when nothing's disrupted.
+  const mapRoute = activeMatch?.route ?? primaryRoute;
 
   if (loading) {
     return (
@@ -79,7 +86,7 @@ export default function HomeScreen() {
       {error && <Text style={styles.errorText}>{error}</Text>}
 
       
-        <RouteMap route={primaryRoute} advisory={activeAdvisory} refreshToken={hazardsVersion} />
+        <RouteMap route={mapRoute} advisory={activeAdvisory} refreshToken={hazardsVersion} />
         <LeaveByCard route={primaryRoute} />
 
       {activeAdvisory && (

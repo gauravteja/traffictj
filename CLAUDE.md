@@ -17,7 +17,7 @@ The wedge is:
 2. Advance warning of official road closures (VIP movement, festivals,
    ceremonies) that traffic police publish but most commuters miss
 3. Crowdsourced hazard reports (potholes, waterlogging) - built
-   2026-08-22, see known gap #5 for what's still unverified
+   2026-08-22, see known gap #4 for what's still unverified
 
 ## Stack decisions and why
 
@@ -35,12 +35,23 @@ The wedge is:
   sandbox) with real route polylines. Google Maps was considered but
   not needed for this piece - may still be worth it later for
   production-grade routing accuracy, but the free stack works now.
-- **Route-matching is NOT built yet - this earlier note was wrong.**
-  `mobile-app/src/utils/routeMatching.js` does not exist (checked full
-  git history, all branches - never committed). The real code, in
-  `mobile-app/src/services/api.js`, hardcodes
-  `affectedRouteId: 1 // TODO: real route-matching, not hardcoded`.
-  See known gap #5 below.
+- **Route-matching is real now, built 2026-08-24.**
+  `mobile-app/src/utils/routeMatching.js` does keyword-overlap
+  matching between an advisory's `road_names` and a saved route's
+  `roadNames` (tokenize + stopword filter, e.g. "Road"/"Circle"/"Main"
+  carry no signal on their own). `getActiveAdvisories()` in
+  `mobile-app/src/services/api.js` no longer hardcodes
+  `affectedRouteId: 1` - matching happens in `HomeScreen.js` via
+  `findActiveAdvisoryMatch(routes, advisories)`, so an advisory only
+  surfaces a `ClosureAlertCard` against a route it genuinely overlaps
+  with, and an unrelated advisory (e.g. a Hebbal closure against a
+  Cubbon Park commute) correctly shows nothing. Verified locally with
+  a mocked-network Playwright pass: a Cubbon Park Road advisory
+  matched route 1 and rendered the closure card with the right reason/
+  window; a Hebbal Flyover advisory matched nothing and rendered no
+  card. This earlier note ("route-matching is NOT built yet") was
+  itself a correction of an even earlier false claim that it already
+  existed - see git history on this file if that confusion resurfaces.
 - **Geocoding: Nominatim (OpenStreetMap's free geocoder), no API key.**
   `mobile-app/src/utils/geocoding.js` resolves a route's
   `originAddress`/`destinationAddress` to lat/lon, in-memory cached,
@@ -142,12 +153,12 @@ The wedge is:
    ~223 points are seeded (see Stack decisions above) - run
    `api/scripts/import-blr-potholes.js` from a real machine for the
    rest.
-5. **Route-matching is hardcoded, not real.** `getActiveAdvisories()`
-   in `mobile-app/src/services/api.js` sets every advisory's
-   `affectedRouteId` to `1` regardless of content. No keyword-overlap
-   or road-segment matching exists. (An earlier version of this file
-   claimed this was already built in `routeMatching.js` - that file
-   never existed; verified against full git history on 2026-08-05.)
+5. **Route-matching is real (closed 2026-08-24)** - see "Stack
+   decisions" above. What's still open: only keyword-overlap on free-
+   text road names, no actual road-segment/geometry matching, and ties
+   (an advisory matching more than one saved route) just resolve to
+   whichever route comes first - fine for now, worth revisiting once
+   users have more than a couple of saved routes.
 
 ## Things NOT to redo
 
@@ -160,6 +171,6 @@ The wedge is:
 - Don't default to Google Maps without discussing cost/API key
   tradeoffs first - the free stack is working and preferred unless
   there's a specific reason to switch.
-- Don't claim route-matching is done again until
-  `mobile-app/src/utils/routeMatching.js` (or equivalent) actually
-  exists and `affectedRouteId` is no longer hardcoded to `1`.
+- Route-matching is real as of 2026-08-24 (`mobile-app/src/utils/routeMatching.js`,
+  see "Stack decisions" above) - don't re-flag it as hardcoded/fake
+  without re-checking the actual code first.
