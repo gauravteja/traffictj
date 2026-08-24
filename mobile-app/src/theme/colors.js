@@ -18,6 +18,9 @@ export const colors = {
   bgDanger: "#FCEBEB",
   textDanger: "#A32D2D",
 
+  bgWarning: "#FDF3E1",
+  textWarning: "#8A5A00",
+
   bgSuccess: "#EAF3DE",
   textSuccess: "#3B6D11",
 };

@@ -4,8 +4,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors, spacing, radius, shadows, eyebrow } from "../theme/colors";
 import { getSavedRoutes, getActiveAdvisories } from "../services/api";
 import { findActiveAdvisoryMatch } from "../utils/routeMatching";
+import { getCurrentWeather } from "../utils/weather";
 import LeaveByCard from "../components/LeaveByCard";
 import ClosureAlertCard from "../components/ClosureAlertCard";
+import WeatherAdvisoryCard from "../components/WeatherAdvisoryCard";
 import RouteRow from "../components/RouteRow";
 import RouteMap from "../components/RouteMap";
 import ReportHazardModal from "../components/ReportHazardModal";
@@ -13,6 +15,11 @@ import ReportHazardModal from "../components/ReportHazardModal";
 export default function HomeScreen() {
   const [routes, setRoutes] = useState([]);
   const [advisories, setAdvisories] = useState([]);
+  // Weather is best-effort and separate from the loading/error state
+  // below - a failed weather fetch (or the sandbox network blocks
+  // Open-Meteo) shouldn't take down routes/advisories, it should just
+  // mean no weather card renders.
+  const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -35,6 +42,15 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+
+    // Deliberately outside the try/catch above and its own errors
+    // swallowed here - a weather fetch failing is not a "couldn't load
+    // your routes" situation, it just means no weather card.
+    try {
+      setWeather(await getCurrentWeather());
+    } catch (err) {
+      setWeather(null);
     }
   }, []);
 
@@ -85,9 +101,10 @@ export default function HomeScreen() {
 
       {error && <Text style={styles.errorText}>{error}</Text>}
 
-      
-        <RouteMap route={mapRoute} advisory={activeAdvisory} refreshToken={hazardsVersion} />
-        <LeaveByCard route={primaryRoute} />
+      <WeatherAdvisoryCard weather={weather} />
+
+      <RouteMap route={mapRoute} advisory={activeAdvisory} refreshToken={hazardsVersion} />
+      <LeaveByCard route={primaryRoute} />
 
       {activeAdvisory && (
         <ClosureAlertCard

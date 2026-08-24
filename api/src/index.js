@@ -1,5 +1,6 @@
 // Admin + public API for traffic advisories, plus crowdsourced hazard
-// reports (potholes, waterlogging - the V2 idea from CLAUDE.md).
+// reports (potholes, waterlogging, speed bumps - the V2 idea from
+// CLAUDE.md).
 // Replaces the WordPress-polling worker: advisories are now written
 // directly as structured rows, no HTML parsing required.
 //
@@ -107,7 +108,7 @@ async function listActiveAdvisories(env) {
   return json({ advisories: results }, 200, CORS_HEADERS);
 }
 
-const HAZARD_TYPES = ["pothole", "waterlogging"];
+const HAZARD_TYPES = ["pothole", "waterlogging", "speed_bump"];
 
 // Public, unauthenticated - this is the crowdsourced reporting endpoint
 // itself, unlike /admin/advisories. No login system exists yet
