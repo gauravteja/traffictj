@@ -10,7 +10,10 @@ conversation, so a fresh session doesn't have to rediscover it.
 
 Not competing with Google on raw ETA prediction - can't out-data them.
 The wedge is:
-1. Proactive "leave-by" alerts for a fixed commute (push, not pull)
+1. Proactive "leave-by" info for a fixed commute, shown the moment
+   you open the app - pull-based by design, not push. Push
+   notifications were considered and explicitly dropped from scope
+   (gauravteja, 2026-08-22) - see "Things NOT to redo"
 2. Advance warning of official road closures (VIP movement, festivals,
    ceremonies) that traffic police publish but most commuters miss
 3. Crowdsourced hazard reports (potholes, waterlogging) - built
@@ -37,7 +40,7 @@ The wedge is:
   git history, all branches - never committed). The real code, in
   `mobile-app/src/services/api.js`, hardcodes
   `affectedRouteId: 1 // TODO: real route-matching, not hardcoded`.
-  See known gap #6 below.
+  See known gap #5 below.
 - **Geocoding: Nominatim (OpenStreetMap's free geocoder), no API key.**
   `mobile-app/src/utils/geocoding.js` resolves a route's
   `originAddress`/`destinationAddress` to lat/lon, in-memory cached,
@@ -125,11 +128,9 @@ The wedge is:
 2. **No user accounts.** `getSavedRoutes()` in the mobile app is
    still mocked - nothing ties a saved route to a real logged-in
    person yet.
-3. **No push notifications.** Data is readable via the API, but
-   nothing alerts a phone when a new advisory affects a saved route.
-4. **Alternate route screen is a placeholder** (just shows an alert/
+3. **Alternate route screen is a placeholder** (just shows an alert/
    toast) - no real re-routing logic exists.
-5. **Hazard reports: built 2026-08-22, not yet confirmed with real
+4. **Hazard reports: built 2026-08-22, not yet confirmed with real
    data on a real device.** `POST/GET /hazards`, a `ReportHazardModal`
    form, and pins on `RouteMap.js` all exist and were verified locally
    (app mounts, form validates, submission fails gracefully when
@@ -141,7 +142,7 @@ The wedge is:
    ~223 points are seeded (see Stack decisions above) - run
    `api/scripts/import-blr-potholes.js` from a real machine for the
    rest.
-6. **Route-matching is hardcoded, not real.** `getActiveAdvisories()`
+5. **Route-matching is hardcoded, not real.** `getActiveAdvisories()`
    in `mobile-app/src/services/api.js` sets every advisory's
    `affectedRouteId` to `1` regardless of content. No keyword-overlap
    or road-segment matching exists. (An earlier version of this file
@@ -150,6 +151,11 @@ The wedge is:
 
 ## Things NOT to redo
 
+- Don't build push notifications. Explicitly decided against
+  (gauravteja, 2026-08-22) - the app is pull-based by design: leave-by
+  info and advisories show when the user opens the app, nothing
+  proactively alerts a phone. Don't reintroduce this as a "known gap"
+  or start wiring up device push tokens/FCM without asking first.
 - Don't reintroduce WordPress for anything.
 - Don't default to Google Maps without discussing cost/API key
   tradeoffs first - the free stack is working and preferred unless
