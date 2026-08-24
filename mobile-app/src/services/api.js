@@ -17,12 +17,17 @@ export async function getSavedRoutes() {
   // (fed to utils/geocoding.js) so RouteMap can show an actual map
   // instead of the old hardcoded coordinates - see CLAUDE.md known
   // gap #1. Once real accounts exist, these come from the user.
+  // roadNames is real too now - the roads this route actually passes
+  // through, fed to utils/routeMatching.js so an advisory only shows
+  // up against a route it genuinely overlaps with. See CLAUDE.md
+  // known gap #5 (now closed) for why this used to be hardcoded.
   return [
     {
       id: 1,
       label: "Home to office",
       originAddress: "Indiranagar, Bengaluru",
       destinationAddress: "Cubbon Park, Bengaluru",
+      roadNames: "Indiranagar, CMH Road, Cubbon Park, Kasturba Road, MG Road",
       etaMinutes: 32,
       etaDeltaMinutes: 8,
       leaveByTime: "8:52am",
@@ -33,6 +38,7 @@ export async function getSavedRoutes() {
       label: "Office to gym",
       originAddress: "Cubbon Park, Bengaluru",
       destinationAddress: "Koramangala, Bengaluru",
+      roadNames: "Richmond Road, Koramangala, Sony World Signal",
       etaMinutes: 14,
       etaDeltaMinutes: 0,
       leaveByTime: null,
@@ -46,13 +52,15 @@ export async function getActiveAdvisories() {
   if (!res.ok) throw new Error("Failed to load advisories");
   const data = await res.json();
 
-  // Map D1's raw shape to what the UI components expect.
+  // Map D1's raw shape to what the UI components expect. Which route
+  // (if any) this affects is no longer decided here - see
+  // utils/routeMatching.js, applied once the caller actually has the
+  // user's routes to compare against.
   return data.advisories.map((a) => ({
     id: a.id,
     roadNames: a.road_names,
     windowText: formatWindow(a.start_time, a.end_time),
     reason: a.reason,
-    affectedRouteId: 1, // TODO: real route-matching, not hardcoded
   }));
 }
 
