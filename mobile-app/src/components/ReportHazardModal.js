@@ -18,6 +18,7 @@ import { reportHazard } from "../services/api";
 const TYPES = [
   { value: "pothole", label: "Pothole", icon: "alert-circle" },
   { value: "waterlogging", label: "Waterlogging", icon: "water" },
+  { value: "speed_bump", label: "Speed bump", icon: "trail-sign" },
 ];
 
 export default function ReportHazardModal({ visible, onClose, onSubmitted }) {

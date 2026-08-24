@@ -8,6 +8,7 @@ import { getActiveHazards } from "../services/api";
 const HAZARD_COLORS = {
   pothole: "#B36B1E",
   waterlogging: "#0E8074",
+  speed_bump: "#6B5B95",
 };
 
 function buildMapHtml({ origin, destination, closurePoint, originLabel, destinationLabel, closureLabel, hazards }) {
@@ -30,6 +31,7 @@ function buildMapHtml({ origin, destination, closurePoint, originLabel, destinat
   const destination = [${destination.lat}, ${destination.lon}];
   const closurePoint = [${closurePoint.lat}, ${closurePoint.lon}];
   const hazards = ${JSON.stringify(hazards)};
+  const hazardColors = ${JSON.stringify(HAZARD_COLORS)};
 
   const map = L.map('map').setView(origin, 13);
 
@@ -45,7 +47,7 @@ function buildMapHtml({ origin, destination, closurePoint, originLabel, destinat
     .bindPopup(${JSON.stringify(closureLabel)});
 
   hazards.forEach((h) => {
-    const color = h.type === 'waterlogging' ? '${HAZARD_COLORS.waterlogging}' : '${HAZARD_COLORS.pothole}';
+    const color = hazardColors[h.type] || '${HAZARD_COLORS.pothole}';
     const label = h.description ? \`\${h.type}: \${h.description}\` : h.type;
     L.circleMarker([h.lat, h.lng], { radius: 5, color, fillColor: color, fillOpacity: 0.7, weight: 1 })
       .addTo(map)

@@ -16,8 +16,10 @@ The wedge is:
    (gauravteja, 2026-08-22) - see "Things NOT to redo"
 2. Advance warning of official road closures (VIP movement, festivals,
    ceremonies) that traffic police publish but most commuters miss
-3. Crowdsourced hazard reports (potholes, waterlogging) - built
-   2026-08-22, see known gap #4 for what's still unverified
+3. Crowdsourced hazard reports (potholes, waterlogging, speed bumps) -
+   built 2026-08-22/24, see known gap #4 for what's still unverified
+4. Weather heads-up (rain/waterlogging risk right now) - built
+   2026-08-24, citywide only for now, see known gap #6
 
 ## Stack decisions and why
 
@@ -91,14 +93,40 @@ The wedge is:
   `api.github.com` is blocked from a sandboxed session, so the full
   ~223-issue sync has to run from a real machine via
   `api/scripts/import-blr-potholes.js`.
+- **Hazards got a third type, `speed_bump`, on 2026-08-24** (the
+  "bumps and potholes" part of the follow-up request after
+  route-matching landed). SQLite doesn't support altering a `CHECK`
+  constraint in place, so `api/migrations/0002_add_speed_bump_hazard_type.sql`
+  does the standard rebuild-the-table dance (create table with the
+  widened constraint, copy every row, drop the old table, rename) -
+  applied directly to the live `traffic-wedge-mvp` database (24 rows
+  at the time, all preserved). `HAZARD_TYPES` in `api/src/index.js`,
+  the type toggle in `ReportHazardModal.js`, and `HAZARD_COLORS` in
+  `RouteMap.js` all updated to match.
+- **Weather heads-up, built 2026-08-24 - the "weather" part of that
+  same follow-up.** `mobile-app/src/utils/weather.js` calls
+  Open-Meteo's free forecast API (no key, no signup, CORS-enabled
+  for direct browser calls - unlike most weather APIs) for a single
+  citywide reading (Bengaluru center, hardcoded lat/lon - not
+  per-route). `WeatherAdvisoryCard.js` renders nothing on clear
+  weather, an amber "Weather heads-up" card on ordinary rain, or a
+  red "Waterlogging risk" card on heavy rain (WMO code or raw
+  precipitation ≥4mm, either trips it) - same "only say something if
+  it matters" rule as `ClosureAlertCard`. Fetched in `HomeScreen.js`
+  alongside routes/advisories but kept in its own try/catch - a
+  failed weather fetch shows no card, it doesn't turn into "couldn't
+  load your routes." Verified locally via mocked-network Playwright:
+  clear/light-rain/heavy-rain payloads each produced the right
+  card (or no card).
 
 ## Current live infrastructure
 
 - D1 database: `traffic-wedge-mvp` (id: a5e0d196-576d-4e10-885d-f0ef4656a47d)
   - Tables: users, saved_routes, advisories, alerts_sent, hazards
-  - `hazards` is the only one with a migration file checked in
-    (`api/migrations/0001_create_hazards.sql`) - the others exist only
-    as whatever's live in D1, no schema file for them yet.
+  - `hazards` is the only one with migration files checked in
+    (`api/migrations/0001_create_hazards.sql`,
+    `0002_add_speed_bump_hazard_type.sql`) - the others exist only as
+    whatever's live in D1, no schema file for them yet.
 - Worker API: `traffic-admin-api` at traffic-admin-api.tjgt.workers.dev
   - `POST /admin/advisories` (needs ADMIN_TOKEN bearer auth)
   - `GET /advisories/active` (public)
@@ -159,6 +187,16 @@ The wedge is:
    (an advisory matching more than one saved route) just resolve to
    whichever route comes first - fine for now, worth revisiting once
    users have more than a couple of saved routes.
+6. **Weather heads-up is citywide, not per-route, and unconfirmed on
+   a real device.** `utils/weather.js` reads one fixed Bengaluru-center
+   coordinate, not each saved route's actual origin - a route on the
+   far side of the city sees the same reading as one downtown. Also
+   only ever confirmed via mocked-network Playwright in this session's
+   sandbox (same limitation gap #1/#4 started with) - nobody has yet
+   opened the app during real rain and seen a real Open-Meteo reading
+   render. Reasonable next step: geocode each route's origin (reusing
+   `utils/geocoding.js`) instead of one citywide point, once this is
+   confirmed working at all.
 
 ## Things NOT to redo
 
@@ -174,3 +212,9 @@ The wedge is:
 - Route-matching is real as of 2026-08-24 (`mobile-app/src/utils/routeMatching.js`,
   see "Stack decisions" above) - don't re-flag it as hardcoded/fake
   without re-checking the actual code first.
+- Speed bumps (a third hazard type) and the weather heads-up card are
+  both real as of 2026-08-24 - don't rebuild `utils/weather.js` or the
+  `speed_bump` hazard type from scratch without checking the actual
+  code first. What's genuinely still open on weather is gap #6
+  (citywide, not per-route, unconfirmed on a real device) - not
+  "doesn't exist."
